@@ -3,7 +3,8 @@ from langgraph.graph import add_messages, StateGraph, END
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessageChunk, ToolMessage
 from dotenv import load_dotenv
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_groq import ChatGroq
+from langchain_community.tools.tavily_search import TavilySearch
 from fastapi import FastAPI, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,7 +20,7 @@ memory = MemorySaver()
 class State(TypedDict):
     messages: Annotated[list, add_messages]
 
-search_tool = TavilySearchResults(
+search_tool = TavilySearch(
     max_results=4,
 )
 
