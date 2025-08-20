@@ -4,7 +4,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessageChunk, ToolMessage
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from langchain_community.tools.tavily_search import TavilySearch
+from langchain_community.tools.tavily_search import TavilySearchResults
 from fastapi import FastAPI, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +20,7 @@ memory = MemorySaver()
 class State(TypedDict):
     messages: Annotated[list, add_messages]
 
-search_tool = TavilySearch(
+search_tool = TavilySearchResults(
     max_results=4,
 )
 
@@ -75,6 +75,15 @@ async def tool_node(state):
     # Add the tool messages to the state
     return {"messages": tool_messages}
 
+#adding the system prompt to protec the ai from hallucinating and stop it from searching everything online
+system_prompt =SystemMessage(content=
+    "You are a helpful assistant. "
+    "Use the search tool *only if the user asks about factual, external knowledge* "
+    "that you are not confident about. "
+    "For casual conversation (like greetings, introductions, chit-chat), "
+    "do NOT use any tools."
+)
+
 graph_builder = StateGraph(State)
 
 graph_builder.add_node("model", model)
@@ -121,7 +130,7 @@ async def generate_chat_responses(message: str, checkpoint_id: Optional[str] = N
         
         # Initialize with first message
         events = graph.astream_events(
-            {"messages": [HumanMessage(content=message)]},
+            {"messages": [system_prompt,HumanMessage(content=message)]},
             version="v2",
             config=config
         )
